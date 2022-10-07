@@ -7,59 +7,57 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 public class DBManager {
+    private ClientFrame clientFrame;
     private Connection connection;
 
-    public void connect(){
-        try{
+    public DBManager(String ip, String port) {
+        try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-
-            connection = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/items?useUnicode=true&serverTimezone=UTC","root", ""
-            );
-            System.out.println("CONNECTED");
-        }catch (Exception e){
+            connection = DriverManager.getConnection("jdbc:mysql://" + ip + ":" + port + "/students?useUnicode=true&serverTimezone=UTC", "root", "");
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    public ArrayList <Items> getItems(){
-        ArrayList<Items> items = new ArrayList<>();
-        try{
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM items");
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                Long id = resultSet.getLong("id");
-                String name = resultSet.getString("name");
-                double price = resultSet.getDouble("price");
 
-                items.add(new Items(id, name, price));
+    public void addStudent(PackageData pd) {
+        Students student = pd.getStudent();
+        if (pd.getOperationType().equals("ADD_STUDENT")) {
+            try {
+                PreparedStatement statement = connection.prepareStatement("insert into students(name, surname, age) values(?,?,?)");
+                statement.setString(1, student.getName());
+                statement.setString(2, student.getSurname());
+                statement.setInt(3, student.getAge());
+
+                statement.executeUpdate();
+                statement.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return items;
-    }
-    public void addItems(Items item){
-        try{
-            PreparedStatement st = connection.prepareStatement("INSERT INTO items(id, name, price) values(NULL,?,?)");
-            st.setString(1,item.getName());
-            st.setDouble(2,item.getPrice());
-            st.executeUpdate();
-            st.close();
-
-        }catch (Exception e){
-            e.printStackTrace();
         }
     }
 
-    public void deleteItem(Long id){
-        try{
-            PreparedStatement st = connection.prepareStatement("DELETE FROM items where id = ?");
-            st.setLong(1, id);
-            st.executeUpdate();
-            st.close();
-        }catch (Exception e){
-            e.printStackTrace();
+    public ArrayList<Students> getAllStudents(PackageData pd) {
+        ArrayList<Students> students = new ArrayList<>();
+        if (pd.getOperationType().equals("LIST_STUDENTS")) {
+            try {
+                PreparedStatement statement = connection.prepareStatement("select * from students");
+                ResultSet resultSet = statement.executeQuery();
+
+                while (resultSet.next()) {
+                    Long id = resultSet.getLong("id");
+                    String name = resultSet.getString("name");
+                    String surname = resultSet.getString("surname");
+                    int age = resultSet.getInt("age");
+
+                    Students stud = new Students(id, name, surname, age);
+                    students.add(stud);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        return students;
     }
 }
+
 
